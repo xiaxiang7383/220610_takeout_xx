@@ -4,40 +4,44 @@
       <div class="login_header">
         <h2 class="login_logo">夏老板的外卖点餐系统</h2>
         <div class="login_header_title">
-          <a href="javascript:;" class="on">短信登录</a>
-          <a href="javascript:;">密码登录</a>
+          <a href="javascript:;" :class="{'on' : smsLoginFlg}" @click="smsLoginFlg=true">短信登录</a>
+          <a href="javascript:;" :class="{'on' : !smsLoginFlg}" @click="smsLoginFlg=false">密码登录</a>
         </div>
       </div>
       <div class="login_content">
-        <form>
-          <div class="on">
+        <form @submit.prevent="login">
+          <div :class="{'on' : smsLoginFlg}">
             <section class="login_message">
-              <input type="tel" maxlength="11" placeholder="手机号">
-              <button disabled="disabled" class="get_verification">获取验证码</button>
+              <input type="tel" maxlength="11" placeholder="手机号" v-model="phone">
+              <button :disabled="!rightPhone" @click.prevent="getCode"
+                      class="get_verification" :class="{right_phone : rightPhone}">
+                {{ countDown > 0 ? `已发送${countDown}s` : '获取验证码' }}
+              </button>
             </section>
             <section class="login_verification">
-              <input type="tel" maxlength="8" placeholder="验证码">
+              <input type="text" maxlength="8" placeholder="验证码" v-model="code">
             </section>
             <section class="login_hint">
-              温馨提示：未注册硅谷外卖帐号的手机号，登录时将自动注册，且代表已同意
+              温馨提示：未注册夏老板外卖帐号的手机号，登录时将自动注册，且代表已同意
               <a href="javascript:;">《用户服务协议》</a>
             </section>
           </div>
-          <div>
+          <div :class="{'on' : !smsLoginFlg}">
             <section>
               <section class="login_message">
-                <input type="tel" maxlength="11" placeholder="手机/邮箱/用户名">
+                <input type="text" maxlength="11" placeholder="手机/邮箱/用户名" v-model="name">
               </section>
               <section class="login_verification">
-                <input type="tel" maxlength="8" placeholder="密码">
-                <div class="switch_button off">
-                  <div class="switch_circle"></div>
-                  <span class="switch_text">...</span>
+                <input type="password" maxlength="8" placeholder="密码" v-if="!showPwd" v-model="pwd">
+                <input type="text" maxlength="8" placeholder="密码" v-else v-model="pwd">
+                <div class="switch_button" :class="showPwd ? 'on' : 'off'" @click="showPwd=!showPwd">
+                  <div class="switch_circle" :class="{right:showPwd}"></div>
+                  <span class="switch_text">{{ showPwd ? 'abc' : '...' }}</span>
                 </div>
               </section>
               <section class="login_message">
-                <input type="text" maxlength="11" placeholder="验证码">
-                <img class="get_verification" src="../../common/images/captcha.svg" alt="captcha">
+                <input type="text" maxlength="11" placeholder="验证码" v-model="captcha">
+                <img class="get_verification" ref="captcha" src="http://localhost:4000/captcha" alt="captcha" @click="refreshCaptcha">
               </section>
             </section>
           </div>
@@ -49,14 +53,120 @@
         <i class="iconfont icon-jiantou2"></i>
       </a>
     </div>
+    <AlertTips :alertText="alertText" v-show="isAlert" @closeTip="closeTip" />
   </section>
 </template>
 <script>
+import AlertTips from "../../components/AlertTips/AlertTips";
+import {reqSendCode, reqSmsLogin, reqLogin} from '../../api'
 export default {
   name: 'Login',
+  components: {AlertTips},
+  data() {
+    return {
+      smsLoginFlg: true,
+      phone: '',
+      code: '',
+      showPwd: false,
+      name: '',
+      pwd: '',
+      captcha: '',
+      countDown: 0,
+      alertText: '',
+      isAlert: false
+    }
+  },
   methods: {
     goBack() {
       this.$router.back()
+    },
+    async getCode() {
+      if (!this.countDown) {
+        this.countDown = 30;
+        this.timer = setInterval(() => {
+          this.countDown--;
+          if (this.countDown <= 0) {
+            clearInterval(this.timer)
+          }
+        }, 1000);
+
+        // ajax
+        const result = await reqSendCode(this.phone);
+        if (result.code === 1) {
+          this.showAlert(result.msg);
+          if (this.countDown) {
+            this.countDown = 0;
+            clearInterval(this.timer);
+            this.timer = undefined;
+          }
+        }
+      }
+    },
+    refreshCaptcha() {
+      this.$refs.captcha.src = 'http://localhost:4000/captcha?time=' + Date.now();
+    },
+    showAlert(text) {
+      this.isAlert = true;
+      this.alertText = text;
+    },
+    closeTip() {
+      this.isAlert = false;
+      this.alertText = '';
+    },
+    async login() {
+      let result;
+      if (this.smsLoginFlg) {
+        const {phone, rightPhone, code} = this;
+        if (!phone) {
+          this.showAlert('手机号码未输入');
+          return;
+        } else if (!rightPhone) {
+          this.showAlert('手机号码输入不正确');
+          return;
+        } else if (!/^\d{6}$/.test(code)) {
+          this.showAlert('验证码输入不正确');
+          return;
+        }
+        result = await reqSmsLogin(phone, code);
+      } else {
+        const {name, pwd, captcha} = this;
+        if (!name) {
+          this.showAlert('用户名必须指定');
+          return;
+        } else if (!pwd) {
+          this.showAlert('密码必须指定');
+          return;
+        } else if (!captcha) {
+          this.showAlert('验证码必须指定');
+          return;
+        }
+        result = await reqLogin(name, pwd, captcha);
+      }
+
+      // 停止计时
+      if (this.countDown) {
+        this.countDown = 0;
+        clearInterval(this.timer);
+        this.timer = undefined;
+      }
+
+      // 刷新图片验证码
+      this.refreshCaptcha();
+
+      if (result.code === 0) {
+        const user = result.data;
+        // 保存用户信息
+        this.$store.dispatch('saveUserInfo', user);
+        this.$router.replace('/profile');
+      } else {
+        const msg = result.msg;
+        this.showAlert(msg);
+      }
+    }
+  },
+  computed: {
+    rightPhone() {
+      return /^1\d{10}$/.test(this.phone);
     }
   }
 }
@@ -135,6 +245,9 @@ export default {
               font-size 14px
               background transparent
 
+              &.right_phone
+                color black
+
           .login_verification
             position relative
             margin-top 16px
@@ -179,6 +292,8 @@ export default {
                 background #fff
                 box-shadow 0 2px 4px 0 rgba(0, 0, 0, .1)
                 transition transform .3s
+                &.right
+                  transform translateX(30px)
 
           .login_hint
             margin-top 12px

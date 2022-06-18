@@ -7,9 +7,17 @@
 
 <script>
 import FooterGuideVue from './components/FooterGuide/FooterGuide.vue'
+import {mapActions} from 'vuex'
 export default {
   name: 'App',
-  components: {FooterGuideVue}
+  components: {FooterGuideVue},
+  mounted() {
+    this.getPosition();
+    this.getUserInfo();
+  },
+  methods: {
+    ...mapActions(['getPosition', 'getUserInfo'])
+  }
 }
 </script>
 

@@ -3,17 +3,17 @@
     <section class="profile">
       <HeadTop title="我的"></HeadTop>
       <section class="profile-number">
-        <router-link to="/login" class="profile-link">
+        <router-link :to="userInfo._id ? '/userinfo' : '/login'" class="profile-link">
           <div class="profile_image">
             <i class="iconfont icon-person"></i>
           </div>
           <div class="user-info">
-            <p class="user-info-top">登录/注册</p>
+            <p class="user-info-top" v-if="!userInfo.phone">{{ userInfo.name || '登录/注册' }}</p>
             <p>
                 <span class="user-icon">
                   <i class="iconfont icon-shouji icon-mobile"></i>
                 </span>
-              <span class="icon-mobile-number">暂无绑定手机号</span>
+              <span class="icon-mobile-number">{{ userInfo.phone ? userInfo.phone : '暂无绑定手机号' }}</span>
             </p>
           </div>
           <span class="arrow">
@@ -68,7 +68,7 @@
               <i class="iconfont icon-vip"></i>
             </span>
           <div class="my_order_div">
-            <span>硅谷外卖会员卡</span>
+            <span>夏老板外卖会员卡</span>
             <span class="my_order_icon">
                 <i class="iconfont icon-jiantou1"></i>
               </span>
@@ -89,15 +89,36 @@
           </div>
         </a>
       </section>
+      <section class="profile_my_order border-1px">
+        <mt-button type="danger" v-if="userInfo._id" style="width: 100%" @click="logout">退出登录</mt-button>
+      </section>
     </section>
   </div>
 </template>
 <script>
 import HeadTop from "../../components/HeadTop/HeadTop";
+import {mapState} from 'vuex'
+import {MessageBox, Toast} from 'mint-ui'
 
 export default {
   name: 'Profile',
-  components: {HeadTop}
+  components: {HeadTop},
+  computed: {
+    ...mapState(['userInfo'])
+  },
+  methods: {
+    logout() {
+      MessageBox.confirm('确认退出吗？').then(
+        ok => {
+          this.$store.dispatch('logout');
+          Toast('退出成功！');
+        },
+        cancel => {
+          console.log('取消退出');
+        }
+      )
+    }
+  }
 }
 </script>
 <style lang="stylus" rel="stylesheet/stylus">
@@ -105,6 +126,7 @@ export default {
 .profile
   width 100%
   overflow hidden
+
   .profile-number
     margin-top 45.5px
 

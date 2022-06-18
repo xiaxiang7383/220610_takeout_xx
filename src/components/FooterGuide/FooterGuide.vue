@@ -1,29 +1,29 @@
 <template>
   <div class="footer_guide border-1px">
-        <span class="guide_item" :class="{on: $route.path === '/homePage'}" @click="goto('/homePage')">
-            <span class="item_icon">
-                <i class="iconfont icon-waimai"></i>
-            </span>
-            <span>外卖</span>
+    <span class="guide_item" :class="{on: $route.path === '/homePage'}" @click="goto('/homePage')">
+        <span class="item_icon">
+            <i class="iconfont icon-waimai"></i>
         </span>
+        <span>外卖</span>
+    </span>
     <span class="guide_item" :class="{on: $route.path === '/search'}" @click="goto('/search')">
-            <span class="item_icon">
-                <i class="iconfont icon-search"></i>
-            </span>
-            <span>搜索</span>
+        <span class="item_icon">
+            <i class="iconfont icon-search"></i>
         </span>
+        <span>搜索</span>
+    </span>
     <span class="guide_item" :class="{on: $route.path === '/order'}" @click="goto('/order')">
-            <span class="item_icon">
-                <i class="iconfont icon-dingdan"></i>
-            </span>
-            <span>订单</span>
+        <span class="item_icon">
+            <i class="iconfont icon-dingdan"></i>
         </span>
+        <span>订单</span>
+    </span>
     <span class="guide_item" :class="{on: $route.path === '/profile'}" @click="goto('/profile')">
-            <span class="item_icon">
-                <i class="iconfont icon-geren"></i>
-            </span>
-            <span>我的</span>
+        <span class="item_icon">
+            <i class="iconfont icon-geren"></i>
         </span>
+        <span>我的</span>
+    </span>
   </div>
 </template>
 <script>
